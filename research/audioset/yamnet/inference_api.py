@@ -11,13 +11,18 @@ import yamnet as yamnet_model
 DEFAULT_TOP_N = 5
 
 
-
 def decode_audio(audio_bytes):
     return np.frombuffer(base64.b64decode(audio_bytes), dtype="float32")
 
 
-def make_app(predict_func):
+def make_app(make_predict_func):
+    predict_func = None
+
     def app(environ, start_response):
+        nonlocal predict_func
+        if predict_func is None:
+            predict_func = make_predict_func()
+
         request = Request(environ)
         inputs = json.loads(request.get_data())
         top_n = int(request.args.get('top_n', 0)) or None
@@ -58,11 +63,24 @@ def predict_classes(audio, top_n=None, *, model, labels):
 if __name__ == "__main__":
     import argparse
     import functools
-    from werkzeug.serving import run_simple
+    import bjoern
+    import multiprocessing
 
-    model, labels = load_model()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--host", default="127.0.0.1", type=str, help="host to serve")
+    parser.add_argument("--port", required=True, type=int, help="port to serve")
+    parser.add_argument("--processes", default=1, type=int, help="number of processes to spawn")
+    args = parser.parse_args()
 
-    app = make_app(
-        functools.partial(predict_classes, model=model, labels=labels)
-    )
-    run_simple("0.0.0.0", 5002, app, use_debugger=True)
+    def make_predict_func():
+        model, labels = load_model()
+        return functools.partial(predict_classes, model=model, labels=labels)
+
+    app = make_app(make_predict_func)
+    procs = [multiprocessing.Process(target=functools.partial(bjoern.run, app, args.host, args.port, reuse_port=True))
+             for i in range(args.processes)]
+    for p in procs:
+        p.start()
+    print("Ready")
+    for p in procs:
+        p.join()

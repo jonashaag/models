@@ -35,6 +35,8 @@ def main(argv):
   yamnet.load_weights('yamnet.h5')
   yamnet_classes = yamnet_model.class_names('yamnet_class_map.csv')
 
+  import time
+  s = time.time()
   for file_name in argv:
     # Decode the WAV file.
     wav_data, sr = sf.read(file_name, dtype=np.int16)
@@ -58,6 +60,7 @@ def main(argv):
     print(file_name, ':\n' +
           '\n'.join('  {:12s}: {:.3f}'.format(yamnet_classes[i], prediction[i])
                     for i in top5_i))
+  print("took", time.time()-s)
 
 
 if __name__ == '__main__':

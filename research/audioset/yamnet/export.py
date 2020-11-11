@@ -33,7 +33,7 @@ import tensorflow as tf
 assert tf.version.VERSION >= '2.0.0', (
     'Need at least TF 2.0, you have TF v{}'.format(tf.version.VERSION))
 import tensorflow_hub as tfhub
-from tensorflowjs.converters import tf_saved_model_conversion_v2 as tfjs_saved_model_converter
+#from tensorflowjs.converters import tf_saved_model_conversion_v2 as tfjs_saved_model_converter
 
 import params as yamnet_params
 import yamnet
@@ -107,6 +107,7 @@ def make_tf2_export(weights_path, export_dir):
   # Make TF2 SavedModel export.
   log('Making TF2 SavedModel export ...')
   tf.saved_model.save(yamnet, export_dir)
+  tf.keras.models.save_model(yamnet._yamnet, "yamnet2", save_format="tf")
   log('Done')
 
   # Check export with TF-Hub in TF2.
@@ -206,8 +207,8 @@ def main(args):
   tflite_export_dir = os.path.join(output_dir, 'tflite')
   tflite_saved_model_dir = make_tflite_export(weights_path, tflite_export_dir)
 
-  tfjs_export_dir = os.path.join(output_dir, 'tfjs')
-  make_tfjs_export(tflite_saved_model_dir, tfjs_export_dir)
+  #tfjs_export_dir = os.path.join(output_dir, 'tfjs')
+  #make_tfjs_export(tflite_saved_model_dir, tfjs_export_dir)
 
 if __name__ == '__main__':
   main(sys.argv[1:])
