@@ -77,10 +77,14 @@ if __name__ == "__main__":
         return functools.partial(predict_classes, model=model, labels=labels)
 
     app = make_app(make_predict_func)
-    procs = [multiprocessing.Process(target=functools.partial(bjoern.run, app, args.host, args.port, reuse_port=True))
-             for i in range(args.processes)]
-    for p in procs:
-        p.start()
-    print("Ready")
-    for p in procs:
-        p.join()
+
+    if args.processes > 1:
+        procs = [multiprocessing.Process(target=functools.partial(bjoern.run, app, args.host, args.port, reuse_port=True))
+                 for i in range(args.processes)]
+        for p in procs:
+            p.start()
+        print("Ready")
+        for p in procs:
+            p.join()
+    else:
+        bjoern.run(app, args.host, args.port)
